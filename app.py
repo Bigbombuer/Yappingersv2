@@ -3,16 +3,14 @@ from flask import Flask, request, jsonify, render_template
 
 from core.scraper_x import fetch_profile, fetch_tweets
 from core.reasoning import build_story_context
-from core.generator import generate_barbar_thread
+from core.generator import generate_thread_pack
 
 app = Flask(__name__)
 
+REQUIRED_ENV = ["GROQ_API_KEY", "X_AUTH_TOKEN", "X_CT0"]
+
 def missing_env():
-    missing = []
-    for k in ["GROQ_API_KEY", "X_AUTH_TOKEN", "X_CT0"]:
-        if not os.getenv(k):
-            missing.append(k)
-    return missing
+    return [k for k in REQUIRED_ENV if not os.getenv(k)]
 
 @app.get("/")
 def home():
@@ -20,9 +18,9 @@ def home():
 
 @app.get("/health")
 def health():
-    m = missing_env()
-    if m:
-        return jsonify({"ok": False, "missing": m})
+    miss = missing_env()
+    if miss:
+        return jsonify({"ok": False, "missing": miss})
     return jsonify({"ok": True})
 
 @app.get("/watchlist")
@@ -33,7 +31,7 @@ def watchlist():
             accounts = [x.strip() for x in f.read().splitlines() if x.strip()]
     except Exception:
         pass
-    return render_template("account.html", accounts=accounts)
+    return render_template("watchlist.html", accounts=accounts)
 
 @app.post("/api/generate")
 def api_generate():
@@ -47,11 +45,17 @@ def api_generate():
 
     profile = fetch_profile(username)
     tweets = fetch_tweets(username, limit=limit)
-    ctx = build_story_context(profile, tweets)
 
-    pack = generate_barbar_thread(profile, tweets, ctx)
-    return jsonify({"ok": True, "profile": profile, "context": ctx, "pack": pack})
+    ctx = build_story_context(profile, tweets)
+    pack = generate_thread_pack(profile, tweets, ctx)
+
+    return jsonify({
+        "ok": True,
+        "profile": profile,
+        "context": ctx,
+        "pack": pack
+    })
 
 @app.errorhandler(Exception)
-def err(e):
+def handle_error(e):
     return jsonify({"ok": False, "error": str(e)}), 500
