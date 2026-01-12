@@ -38,13 +38,16 @@ def is_logged_in(page) -> bool:
 
 def looks_like_spam(t: str) -> bool:
     low = (t or "").lower()
-    spam_kw = ["giveaway","retweet","tag","winner","prize","gm","good morning","wagmi"]
-    if any(k in low for k in spam_kw): return True
-    if len(t) < 60: return True
+    spam_kw = ["giveaway", "retweet", "tag", "winner", "prize", "wagmi"]
+    if any(k in low for k in spam_kw):
+        return True
+    if len(t) < 60:
+        return True
     return False
 
 def fetch_profile(username: str) -> dict:
-    username = username.replace("@","").strip()
+    username = username.replace("@", "").strip()
+
     with sync_playwright() as p:
         ctx = open_context(p)
         inject_x_cookies(ctx)
@@ -52,12 +55,14 @@ def fetch_profile(username: str) -> dict:
 
         if not is_logged_in(page):
             ctx.close()
-            raise RuntimeError("Cookie invalid/expired")
+            raise RuntimeError("Cookie X invalid/expired")
 
         page.goto(f"https://x.com/{username}", wait_until="domcontentloaded")
         time.sleep(3)
 
         bio = ""
+        pinned = ""
+
         try:
             bio_el = page.query_selector('[data-testid="UserDescription"]')
             if bio_el:
@@ -65,7 +70,6 @@ def fetch_profile(username: str) -> dict:
         except:
             pass
 
-        pinned = ""
         try:
             arts = page.query_selector_all("article")
             if arts:
@@ -75,14 +79,19 @@ def fetch_profile(username: str) -> dict:
 
         ctx.close()
 
-    return {"username": username, "bio": bio, "pinned": pinned, "url": f"https://x.com/{username}"}
+    return {
+        "username": username,
+        "bio": bio,
+        "pinned": pinned,
+        "url": f"https://x.com/{username}"
+    }
 
-def fetch_tweets(username: str, limit=80, max_scan=250):
-    username = username.replace("@","").strip()
+def fetch_tweets(username: str, limit=80, max_scan=250) -> list[str]:
+    username = username.replace("@", "").strip()
     limit = max(20, min(int(limit), 200))
 
-    tweets=[]
-    seen=set()
+    tweets = []
+    seen = set()
 
     with sync_playwright() as p:
         ctx = open_context(p)
@@ -91,25 +100,34 @@ def fetch_tweets(username: str, limit=80, max_scan=250):
 
         if not is_logged_in(page):
             ctx.close()
-            raise RuntimeError("Cookie invalid/expired")
+            raise RuntimeError("Cookie X invalid/expired")
 
         page.goto(f"https://x.com/{username}", wait_until="domcontentloaded")
         time.sleep(3)
 
-        scanned=0
+        scanned = 0
         for _ in range(25):
             arts = page.query_selector_all("article")
+
             for art in arts:
-                if scanned >= max_scan: break
+                if scanned >= max_scan:
+                    break
                 try:
                     raw = clean_text(art.inner_text())
-                    if raw in seen: continue
-                    seen.add(raw)
                     scanned += 1
-                    if "reposted" in raw.lower(): continue
-                    if looks_like_spam(raw): continue
+
+                    if raw in seen:
+                        continue
+                    seen.add(raw)
+
+                    if "reposted" in raw.lower():
+                        continue
+                    if looks_like_spam(raw):
+                        continue
+
                     tweets.append(raw)
-                    if len(tweets) >= limit: break
+                    if len(tweets) >= limit:
+                        break
                 except:
                     pass
 
@@ -117,7 +135,7 @@ def fetch_tweets(username: str, limit=80, max_scan=250):
                 break
 
             page.mouse.wheel(0, 2400)
-            time.sleep(1.0)
+            time.sleep(1)
 
         ctx.close()
 
