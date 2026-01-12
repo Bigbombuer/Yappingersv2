@@ -34,23 +34,24 @@ def watchlist():
     return render_template("watchlist.html", accounts=accounts)
 
 @app.post("/api/generate")
+@app.post("/api/generate")
 def api_generate():
     data = request.get_json(silent=True) or {}
 
     username = (data.get("username") or "").strip().replace("@", "")
-    limit = int(data.get("limit") or 80)
+    limit = int(data.get("limit") or 25)  # turunin default biar gak timeout
 
     if not username:
         return jsonify({"ok": False, "error": "username kosong"}), 400
 
     try:
-        print("==> START generate for", username)
+        print("==> START", username)
 
         profile = fetch_profile(username)
         print("==> PROFILE OK")
 
         tweets = fetch_tweets(username, limit=limit)
-        print("==> TWEETS OK:", len(tweets))
+        print("==> TWEETS OK", len(tweets))
 
         ctx = build_story_context(profile, tweets)
         print("==> CONTEXT OK")
