@@ -62,8 +62,7 @@ def api_generate():
         return jsonify({"ok": True, "profile": profile, "context": ctx, "pack": pack})
 
     except Exception as e:
-        print("==> ERROR:", repr(e))
-        return jsonify({"ok": False, "error": str(e)}), 500
+    return jsonify({"ok": False, "error": str(e)}), 500
 
 @app.errorhandler(Exception)
 def handle_error(e):
