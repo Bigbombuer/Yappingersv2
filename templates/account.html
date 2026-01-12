@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Watchlist</title>
+  <style>
+    body{font-family:system-ui;padding:18px;max-width:980px;margin:auto}
+    a{display:block;padding:12px;border:1px solid #ddd;border-radius:12px;margin:8px 0;text-decoration:none;color:#111}
+  </style>
+</head>
+<body>
+<h2>📌 Watchlist</h2>
+<p>Klik salah satu akun untuk analyze/generate.</p>
+
+{% for acc in accounts %}
+<a href="/?u=@{{acc}}">@{{acc}}</a>
+{% endfor %}
+
+</body>
+</html>
