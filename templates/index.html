@@ -5,21 +5,20 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Yappingers</title>
   <style>
-    body{font-family:system-ui;margin:0;padding:18px;max-width:980px;margin:auto}
+    body{font-family:system-ui;padding:18px;max-width:980px;margin:auto}
     .card{border:1px solid #ddd;border-radius:14px;padding:14px;margin:12px 0}
-    input,button,select,textarea{width:100%;padding:12px;border-radius:10px;border:1px solid #ccc;margin-top:8px}
-    button{font-weight:800;cursor:pointer}
+    input,button{width:100%;padding:12px;border-radius:10px;border:1px solid #ccc;margin-top:8px}
+    button{font-weight:900;cursor:pointer}
     pre{white-space:pre-wrap}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     .muted{opacity:.7;font-size:13px}
-    .ok{color:green;font-weight:800}
-    .err{color:crimson;font-weight:800}
+    .ok{color:green;font-weight:900}
+    .err{color:crimson;font-weight:900}
   </style>
 </head>
 <body>
 
 <h2>🔥 Yappingers (Final Barbar V1)</h2>
-<p class="muted">Analyze → Generate → (Optional) Post Thread</p>
+<p class="muted">Scrape akun X → logic → generate thread JSON.</p>
 
 <div class="card">
   <a href="/watchlist"><button>📌 Watchlist</button></a>
@@ -30,21 +29,10 @@
   <label>Username X</label>
   <input id="username" value="@apex_exchange"/>
 
-  <div class="row">
-    <div>
-      <label>Tweet dibaca</label>
-      <input id="limit" type="number" value="80" min="20" max="200"/>
-    </div>
-    <div>
-      <label>Mode</label>
-      <select id="mode">
-        <option value="analyze">Analyze</option>
-        <option value="generate" selected>Generate Thread</option>
-      </select>
-    </div>
-  </div>
+  <label>Tweet dibaca</label>
+  <input id="limit" type="number" value="80"/>
 
-  <button id="go">⚡ Jalankan</button>
+  <button id="go">⚡ Generate</button>
   <p id="status" class="muted"></p>
 </div>
 
@@ -57,37 +45,35 @@
 const statusEl = document.getElementById("status");
 const outEl = document.getElementById("out");
 
-async function callApi(path, body){
-  const res = await fetch(path,{
+async function postJson(url, payload){
+  const res = await fetch(url,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body: JSON.stringify(body)
+    body: JSON.stringify(payload)
   });
   const txt = await res.text();
-  try { return JSON.parse(txt); }
+  try{ return JSON.parse(txt); }
   catch(e){ return {ok:false,error:"Non JSON response",raw:txt}; }
 }
 
 document.getElementById("go").onclick = async ()=>{
-  statusEl.textContent="⏳ proses...";
+  statusEl.textContent="⏳ generating...";
   outEl.textContent="";
 
-  const username=document.getElementById("username").value.trim();
-  const limit=parseInt(document.getElementById("limit").value||"80");
-  const mode=document.getElementById("mode").value;
+  const username = document.getElementById("username").value.trim();
+  const limit = parseInt(document.getElementById("limit").value || "80");
 
-  const api = mode === "generate" ? "/api/generate" : "/api/analyze";
-  const j = await callApi(api,{username,limit});
+  const j = await postJson("/api/generate",{username,limit});
 
   if(!j.ok){
-    statusEl.innerHTML=`<span class="err">❌ ${j.error||"error"}</span>`;
+    statusEl.innerHTML = `<span class="err">❌ ${j.error||"error"}</span>`;
     outEl.textContent = j.raw || JSON.stringify(j,null,2);
     return;
   }
-  statusEl.innerHTML=`<span class="ok">✅ DONE</span>`;
-  outEl.textContent = JSON.stringify(j,null,2);
-}
-</script>
 
+  statusEl.innerHTML = `<span class="ok">✅ DONE</span>`;
+  outEl.textContent = JSON.stringify(j,null,2);
+};
+</script>
 </body>
 </html>
