@@ -45,16 +45,31 @@ const statusEl = document.getElementById("status");
 const outEl = document.getElementById("out");
 
 async function postJson(url, payload){
-  const res = await fetch(url,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify(payload)
-  });
-  const txt = await res.text();
-  try{ return JSON.parse(txt); }
-  catch(e){ return {ok:false,error:"Non JSON response",raw:txt}; }
-}
+  try{
+    const res = await fetch(url,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify(payload)
+    });
 
+    const txt = await res.text();
+
+    // kalau server ngasih HTML / kosong
+    if(!txt || txt.trim().length === 0){
+      return {ok:false,error:"Empty response (server timeout/crash)",raw:""};
+    }
+
+    // coba parse
+    try{
+      const j = JSON.parse(txt);
+      return j;
+    }catch(e){
+      return {ok:false,error:"Non JSON response",raw:txt};
+    }
+  }catch(err){
+    return {ok:false,error:"Fetch failed: "+err.message,raw:""};
+  }
+}
 document.getElementById("go").onclick = async ()=>{
   statusEl.textContent="⏳ generating...";
   outEl.textContent="";
