@@ -35,7 +35,7 @@ def watchlist():
 
 @app.post("/api/generate")
 def api_generate():
-    data = request.get_json(force=True) or {}
+    data = request.get_json(silent=True) or {}
 
     username = (data.get("username") or "").strip().replace("@", "")
     limit = int(data.get("limit") or 80)
@@ -43,18 +43,26 @@ def api_generate():
     if not username:
         return jsonify({"ok": False, "error": "username kosong"}), 400
 
-    profile = fetch_profile(username)
-    tweets = fetch_tweets(username, limit=limit)
+    try:
+        print("==> START generate for", username)
 
-    ctx = build_story_context(profile, tweets)
-    pack = generate_thread_pack(profile, tweets, ctx)
+        profile = fetch_profile(username)
+        print("==> PROFILE OK")
 
-    return jsonify({
-        "ok": True,
-        "profile": profile,
-        "context": ctx,
-        "pack": pack
-    })
+        tweets = fetch_tweets(username, limit=limit)
+        print("==> TWEETS OK:", len(tweets))
+
+        ctx = build_story_context(profile, tweets)
+        print("==> CONTEXT OK")
+
+        pack = generate_thread_pack(profile, tweets, ctx)
+        print("==> GROQ OK")
+
+        return jsonify({"ok": True, "profile": profile, "context": ctx, "pack": pack})
+
+    except Exception as e:
+        print("==> ERROR:", repr(e))
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 @app.errorhandler(Exception)
 def handle_error(e):
