@@ -4,14 +4,14 @@ from flask import Flask, request, jsonify, render_template
 from core.scraper_x import fetch_profile, fetch_tweets
 from core.reasoning import build_story_context
 from core.generator import generate_barbar_thread
-from core.poster_x import post_thread
 
 app = Flask(__name__)
 
 def missing_env():
-    missing=[]
-    for k in ["GROQ_API_KEY","X_AUTH_TOKEN","X_CT0"]:
-        if not os.getenv(k): missing.append(k)
+    missing = []
+    for k in ["GROQ_API_KEY", "X_AUTH_TOKEN", "X_CT0"]:
+        if not os.getenv(k):
+            missing.append(k)
     return missing
 
 @app.get("/")
@@ -21,20 +21,33 @@ def home():
 @app.get("/health")
 def health():
     m = missing_env()
-    if m: return jsonify({"ok": False, "missing": m})
+    if m:
+        return jsonify({"ok": False, "missing": m})
     return jsonify({"ok": True})
 
 @app.get("/watchlist")
 def watchlist():
-    with open("watchlist.txt","r",encoding="utf-8") as f:
-        accounts=[x.strip() for x in f.read().splitlines() if x.strip()]
+    with open("watchlist.txt", "r", encoding="utf-8") as f:
+        accounts = [x.strip() for x in f.read().splitlines() if x.strip()]
     return render_template("account.html", accounts=accounts)
 
-@app.post("/api/analyze")
-def api_analyze():
+@app.post("/api/generate")
+def api_generate():
     data = request.get_json(force=True)
-    username = (data.get("username") or "").strip().replace("@","")
+
+    username = (data.get("username") or "").strip().replace("@", "")
     limit = int(data.get("limit") or 80)
+
+    profile = fetch_profile(username)
+    tweets = fetch_tweets(username, limit=limit)
+    ctx = build_story_context(profile, tweets)
+
+    pack = generate_barbar_thread(profile, tweets, ctx)
+    return jsonify({"ok": True, "profile": profile, "context": ctx, "pack": pack})
+
+@app.errorhandler(Exception)
+def err(e):
+    return jsonify({"ok": False, "error": str(e)}), 500    limit = int(data.get("limit") or 80)
 
     profile = fetch_profile(username)
     tweets = fetch_tweets(username, limit=limit)
