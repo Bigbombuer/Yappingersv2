@@ -20,11 +20,12 @@ def inject_x_cookies(ctx):
 def open_context(p):
     os.makedirs(X_PROFILE_DIR, exist_ok=True)
     return p.chromium.launch_persistent_context(
-        user_data_dir=X_PROFILE_DIR,
-        headless=True,
-        viewport={"width": 430, "height": 900},
-        locale="en-US",
-    )
+    user_data_dir=X_PROFILE_DIR,
+    headless=True,
+    viewport={"width": 430, "height": 900},
+    locale="en-US",
+    user_agent="Mozilla/5.0 (Linux; Android 12; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
+)
 
 def is_logged_in(page) -> bool:
     page.goto("https://x.com/home", wait_until="domcontentloaded")
